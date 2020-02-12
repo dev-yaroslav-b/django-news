@@ -1,0 +1,58 @@
+version: '3.7'
+
+services:
+  web:
+    build: ./app
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ./app/:/usr/src/app/
+      - ./app/staticfiles:/home/app/web/staticfiles
+      - ./app/mediafiles:/home/app/web/mediafiles
+    ports:
+      - 8000:8000
+    env_file:
+      - ./.env.dev
+    depends_on:
+      - db
+  db:
+    image: postgres:12.0-alpine
+    volumes:
+      - ./storage/postgres_data:/var/lib/postgresql/data/
+    env_file:
+      - ./.env.dev
+
+  redis:
+    image: "redis:alpine"
+
+  celery:
+    build: ./app
+    command: celery -A app worker -l info
+    volumes:
+      - ./app:/code
+    env_file:
+      - ./.env.dev
+    depends_on:
+      - db
+      - redis
+
+  celery-beat:
+    build: ./app
+    command: celery -A app beat -l info
+    volumes:
+      - ./app:/code
+    env_file:
+      - ./.env.dev
+    depends_on:
+      - db
+      - redis
+
+  celery-flower:
+    image: mher/flower
+    ports:
+      - 5555:5555
+    command: celery flower --broker=redis://redis
+    env_file:
+      - ./.env.dev
+    depends_on:
+      - db
+      - redis
