@@ -1,6 +1,6 @@
 {% load static %}
 
-{% block mycontent %}
+{% block content %}
 {% load extra_markdown %}
 <a href="{% url 'create_post' %}">Create</a>
 {% if user.is_authenticated %}
